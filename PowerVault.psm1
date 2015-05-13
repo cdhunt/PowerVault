@@ -55,8 +55,8 @@ function Get-Vault
    --------                       --------
    username   System.Security.SecureString
 .LINK
-   Get-Vault
    https://www.vaultproject.io/docs/http/index.html
+   Get-Vault
 .NOTES
    At the current version, Vault does not yet promise backwards compatibility even with the v1 prefix. We'll remove this warning when this policy changes. We expect we'll reach API stability by Vault 0.3.
 #>
@@ -102,12 +102,12 @@ function Get-Secret
                 if ($data | Get-Member -Name username)
                 {                    
                     $username = $data.username
-                    Write-Debug "Found a username property in the results. [$username]"
+                    Write-Verbose "Found a username property in the results. [$username]"
                 }
                 else
                 {
                     $username = $Path.Split('/')[-1]
-                    Write-Debug "Did not find a username property, parsing path. [$username]"
+                    Write-Verbose "Did not find a username property, parsing path. [$username]"
                 }
 
                 if ($data | Get-Member -Name password)
@@ -132,6 +132,60 @@ function Get-Secret
         throw $result
     }
 
+}
+
+<#
+.Synopsis
+   Create or update a Secret
+.DESCRIPTION
+   This will set the contents of a Secret.
+.EXAMPLE
+   PS C:\> Set-Secret -VaultObject $vault -Path secret/new -Secret @{value="secret"}
+
+   PS C:\> Get-Secret $vault secret/new
+
+   value 
+   ----- 
+   secret
+#>
+function Set-Secret
+{
+    [CmdletBinding()]
+    [Alias()]
+    Param
+    (
+        # The Object containing Vault access details.
+        [Parameter(Mandatory, Position=0)]
+        [PSCustomObject]
+        $VaultObject,
+
+        # The Path to the Secret as you would pass to Vault Read.
+        [Parameter(Mandatory, Position=1)]
+        [String]
+        $Path,
+
+        # The Secret. This will be converted to JSON. A simple Hash works best.
+        [Parameter(Mandatory, Position=2)]
+        [Object]
+        $Secret
+    )
+
+    $uri = $VaultObject.uri + $Path
+
+    Write-Debug $uri
+
+    try
+    {
+        $data = $Secret | ConvertTo-Json
+
+        Write-Debug $data
+
+        Invoke-RestMethod -Uri $uri -Method Post -Headers $VaultObject.auth_header -Body $data | Write-Output
+    }
+    catch
+    {
+        throw "Cannot convert Secret to JSON"
+    }
 }
 
 Export-ModuleMember -Function Get-Vault, Get-Secret
