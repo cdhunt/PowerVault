@@ -24,6 +24,8 @@ secret
 
 ```powershell
 # Retun the Secret as a [PSCredential]
+PS C:\> Set-Secret -VaultObject $vault -Path secret/username -Secret @{password="P@55w0rd"}
+
 PS C:\> Get-Secret -VaultObject $vault -Path secret/username -AsCredential 
 
 UserName                       Password
