@@ -120,49 +120,58 @@ function Get-Secret
 
     Write-Debug $uri
 
+
     $result = Invoke-RestMethod -Uri $uri -Headers $VaultObject.auth_header
 
-    if ($result.GetType().Name -eq 'PSCustomObject')
-    {        
-        if ($result | Get-Member -Name data)
+    if ($result)
+    {
+        if ($result.GetType().Name -eq 'PSCustomObject')
+        {        
+            if ($result | Get-Member -Name data)
+            {
+                $data = $result | Select-Object -ExpandProperty data
+
+                if ($AsCredential)
+                {
+                    $username = [string]::Empty
+
+                    if ($data | Get-Member -Name username)
+                    {                    
+                        $username = $data.username
+                        Write-Verbose "Found a username property in the results. [$username]"
+                    }
+                    else
+                    {
+                        $username = $Path.Split('/')[-1]
+                        Write-Verbose "Did not find a username property, parsing path. [$username]"
+                    }
+
+                    if ($data | Get-Member -Name password)
+                    {
+                        New-Object -TypeName System.Management.Automation.PSCredential `
+                        -ArgumentList $username, ($data.password | ConvertTo-SecureString -AsPlainText -Force)
+                    }
+                    else
+                    {
+                        Write-Debug $result
+                        throw "The data did not contain a password property."
+                    }
+                }
+                else
+                {
+                    Write-Output -InputObject $data
+                }
+            }
+        }
+        else
         {
-            $data = $result | Select-Object -ExpandProperty data
-
-            if ($AsCredential)
-            {
-                $username = [string]::Empty
-
-                if ($data | Get-Member -Name username)
-                {                    
-                    $username = $data.username
-                    Write-Verbose "Found a username property in the results. [$username]"
-                }
-                else
-                {
-                    $username = $Path.Split('/')[-1]
-                    Write-Verbose "Did not find a username property, parsing path. [$username]"
-                }
-
-                if ($data | Get-Member -Name password)
-                {
-                    New-Object -TypeName System.Management.Automation.PSCredential `
-                    -ArgumentList $username, ($data.password | ConvertTo-SecureString -AsPlainText -Force)
-                }
-                else
-                {
-                    Write-Debug $result
-                    throw "The data did not contain a password property."
-                }
-            }
-            else
-            {
-                Write-Output -InputObject $data
-            }
+            throw $result
         }
     }
     else
     {
-        throw $result
+        Write-Debug $result
+        Write-Verbose "No Secret found. [$Path]"
     }
 
 }
@@ -221,4 +230,43 @@ function Set-Secret
     }
 }
 
-Export-ModuleMember -Function Get-Vault, Get-Secret
+
+<#
+.Synopsis
+   Delete a Secret
+.DESCRIPTION
+   This will set the delete of a Secret.
+.EXAMPLE
+   PS C:\> Remove-Secret $vault secret/new
+
+   PS C:\> Get-Secret $vault secret/new -Verbose
+
+   VERBOSE: No Secret found. [secret/new]
+#>
+function Remove-Secret
+{
+    [CmdletBinding()]
+    [Alias()]
+    Param
+    (
+        # The Object containing Vault access details.
+        [Parameter(Mandatory, Position=0)]
+        [PSCustomObject]
+        $VaultObject,
+
+        # The Path to the Secret as you would pass to Vault Read.
+        [Parameter(Mandatory, Position=1)]
+        [String]
+        $Path
+    )
+
+    $uri = $VaultObject.uri + $Path
+
+    Write-Debug $uri
+
+
+    Invoke-RestMethod -Uri $uri -Method Delete -Headers $VaultObject.auth_header| Write-Output
+
+}
+
+Export-ModuleMember -Function *-Vault, *-Secret

@@ -5,7 +5,7 @@ This is a PowerShell client for [HashiCorp Vault](https://www.vaultproject.io/).
 
 The HTTP API is not stable, so this module is not stable.
 
-The module only contains basic Create, Read and Update functionality.
+The module only contains basic CRUD functionality.
 
 ## Examples
 
