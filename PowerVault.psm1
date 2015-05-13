@@ -39,6 +39,39 @@ function Get-Vault
 
 <#
 .Synopsis
+   Test connectivity to the Vault server.
+.DESCRIPTION
+   This method returns the health of the server if it can connect.
+.EXAMPLE
+   PS C:\> Test-Vault $vault
+
+   initialized sealed standby
+   ----------- ------ -------
+          True  False   False
+#>
+function Test-Vault
+{
+    [CmdletBinding()]
+    [Alias()]
+    [OutputType([Object])]
+    Param
+    (
+        # The Object containing Vault access details.
+        [Parameter(Mandatory, Position=0)]
+        [PSCustomObject]
+        $VaultObject
+
+    )
+
+    $uri = $VaultObject.uri + 'sys/health'
+
+    Write-Debug $uri
+
+    Invoke-RestMethod -Uri $uri -Headers $VaultObject.auth_header | Write-Output
+}
+
+<#
+.Synopsis
    Access a Secret in the Vault
 .DESCRIPTION
    This can return a [PSCustomObject] base don the raw Secret or attempt to return a [PSCredential] object.
