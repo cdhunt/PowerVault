@@ -6,7 +6,7 @@
 .DESCRIPTION
    This is session variable required by all other Cmdlets.
 .EXAMPLE
-   $vault = Get-Vault -Address 127.0.0.1 -Token 46e231ee-49bb-189d-c58d-f276743ececa
+   PS C:\> $vault = Get-Vault -Address 127.0.0.1 -Token 46e231ee-49bb-189d-c58d-f276743ececa
 #>
 function Get-Vault
 {
@@ -43,13 +43,13 @@ function Get-Vault
 .DESCRIPTION
    This can return a [PSCustomObject] base don the raw Secret or attempt to return a [PSCredential] object.
 .EXAMPLE
-   Get-Secret -VaultObject $vault -Path secret/hello
+   PS C:\> Get-Secret -VaultObject $vault -Path secret/hello
 
    value
    -----
    world
 .EXAMPLE
-   Get-Secret -VaultObject $vault -Path secret/username -AsCredential 
+   PS C:\> Get-Secret -VaultObject $vault -Path secret/username -AsCredential 
 
    UserName                       Password
    --------                       --------
