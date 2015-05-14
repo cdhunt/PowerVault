@@ -1,6 +1,12 @@
-﻿Import-Module .\PowerVault.psd1
+﻿$Verbose = @{}
+if($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notlike "master")
+{
+    $Verbose.add("Verbose",$True)
+}
 
-Describe "API Compatability" {
+Import-Module $PSScriptRoot\..\PowerVault\PowerVault.psd1 -Force
+
+Describe 'API Compatability' {
     Invoke-WebRequest -Uri https://dl.bintray.com/mitchellh/vault/vault_0.1.2_windows_amd64.zip -OutFile TestDrive:\vault.zip
     New-Item -Path TestDrive:\ -Name Vault -ItemType Directory
     Expand-Archive -Path TestDrive:\Vault.zip -DestinationPath TestDrive:\Vault
@@ -53,13 +59,13 @@ Describe "API Compatability" {
         }
     }
 
-    Context "Create" {
+    Context 'Create' {
         Set-Secret $vault secret/new @{value='secret'}
 
         $json = TestDrive:\Vault\Vault.exe --% read -format=json secret/new
         $result = $json | ConvertFrom-Json
 
-        It "Should contain a new secret" {
+        It 'Should contain a new secret' {
             $result | Should Not BeNullOrEmpty
             $result.data.value | Should BeExactly 'secret'
         }
@@ -75,13 +81,13 @@ Describe "API Compatability" {
             $output | Should Not BeNullOrEmpty 
         }
 
-        It "Should return hello world" {
+        It 'Should return hello world' {
 
             $result.value | Should BeExactly 'world'            
         }
     }
 
-    Context "Update" {
+    Context 'Update' {
         Set-Secret $vault secret/update @{value='now'}
 
         $json = TestDrive:\Vault\Vault.exe --% read -format=json secret/update
@@ -94,7 +100,7 @@ Describe "API Compatability" {
 
     }
 
-    Context "Delete" {
+    Context 'Delete' {
         Remove-Secret $vault secret/delete
 
         $json = & TestDrive:\Vault\Vault.exe 'read', '-format=json', 'secret/delete' 2> TestDrive:\stderr.txt
@@ -105,11 +111,11 @@ Describe "API Compatability" {
 
     }
 
-   Context "Secret with username property" {
+   Context 'Secret with username property' {
 
         $result = Get-Secret $vault -Path secret/testwithusername -AsCredential 
 
-        It "Should be a PSCredential" {
+        It 'Should be a PSCredential' {
             $result.GetType().Name | Should Be 'PSCredential'
         }
 
@@ -118,11 +124,11 @@ Describe "API Compatability" {
         }
     }
 
-    Context "Secret without username property" {
+    Context 'Secret without username property' {
         
         $result = Get-Secret $vault -Path secret/testwithoutusername -AsCredential 
 
-        It "Should be a PSCredential" {
+        It 'Should be a PSCredential' {
             $result.GetType().Name | Should Be 'PSCredential'
         }
 
@@ -131,9 +137,9 @@ Describe "API Compatability" {
         }
     }
 
-    Context "Secret does not exist" {
+    Context 'Secret does not exist' {
 
-        It "Should handle an exception" {
+        It 'Should handle an exception' {
 
             { Get-Secret $vault -Path secret/nohello } | Should Not Throw
 
