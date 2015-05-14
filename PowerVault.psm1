@@ -118,10 +118,18 @@ function Get-Secret
 
     $uri = $VaultObject.uri + $Path
 
+    $result = [string]::Empty
+
     Write-Debug $uri
 
-
-    $result = Invoke-RestMethod -Uri $uri -Headers $VaultObject.auth_header
+    try 
+    {
+        $result = Invoke-RestMethod -Uri $uri -Headers $VaultObject.auth_header
+    }
+    catch
+    {
+        # Do nothing
+    }
 
     if ($result)
     {
