@@ -16,22 +16,19 @@ function Get-Vault
     Param
     (
         # Server Address
-        [Parameter(Mandatory, Position=0)]
-        $Address,
+        [Parameter(Position=0)]
+        [String]
+        $Address = $env:VAULT_ADDR,
 
         # Client token
-        [Parameter(Mandatory, Position=1)]
-        $Token,
-
-        # Server Port
-        [Parameter(Position=2)]
-        [int]
-        $Port = 8200
+        [Parameter(Position=1)]
+        [String]
+        $Token = $env:VAULT_TOKEN
     )
 
- 
-    [PSCustomObject]@{'uri'= $env:VAULT_ADDR + $prefix
-                      'auth_header' = @{'X-Vault-Token'=$env:VAULT_TOKEN}
+
+    [PSCustomObject]@{'uri'= $Address + $prefix
+                      'auth_header' = @{'X-Vault-Token'=$Token}
                       } |
     Write-Output
 
@@ -229,13 +226,14 @@ function Set-Secret
         $data = $Secret | ConvertTo-Json
 
         Write-Debug $data
-
-        Invoke-RestMethod -Uri $uri -Method Post -Headers $VaultObject.auth_header -Body $data | Write-Output
     }
     catch
     {
         throw "Cannot convert Secret to JSON"
     }
+
+    Invoke-RestMethod -Uri $uri -Method Post -Headers $VaultObject.auth_header -Body $data | Write-Output
+
 }
 
 

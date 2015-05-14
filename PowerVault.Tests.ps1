@@ -17,15 +17,34 @@ Describe "API Compatability" {
 
     # Pre-populate with some known secrets
     TestDrive:\Vault\Vault.exe write secret/hello value=world
+    TestDrive:\Vault\Vault.exe write secret/delete value=me
     TestDrive:\Vault\Vault.exe write secret/testwithusername username=usernametest password=p@55w0rd
     TestDrive:\Vault\Vault.exe write secret/testwithoutusername password=p@55w0rd
 
-    $vault = Get-Vault -Address 127.0.0.1 -token $token
+    $vault = Get-Vault
 
-    Context "Verify Server Started" {
+    Context 'Test Get-Vault Parameters' {
+        
+        It 'Should work with $env' {
+            $result = Get-Vault
+
+            $result.uri | Should BeExactly "$addr/v1/"
+            $result.auth_header.'X-Vault-Token' | Should BeExactly $token
+        }
+
+        It 'Should work with parametres' {
+            $result = Get-Vault -Address http://127.0.0.1:8300 -Token abc-123
+
+            $result.uri | Should BeExactly 'http://127.0.0.1:8300/v1/'
+            $result.auth_header.'X-Vault-Token' | Should BeExactly 'abc-123'
+        }
+    }
+   
+   
+    Context 'Verify Server Started' {
         $result = Test-Vault $vault
 
-        It "Should be Initialized" {
+        It 'Should be Initialized' {
             $result.initialized | Should Be $true
         }
         It "Should not be Sealed" {
@@ -33,7 +52,11 @@ Describe "API Compatability" {
         }
     }
 
-    Context "Basic CRUD" {     
+    Context "Create" {
+
+    }
+
+    Context "Read" {     
 
         $result = Get-Secret $vault secret/hello
 
@@ -47,6 +70,14 @@ Describe "API Compatability" {
 
             $result.value | Should BeExactly 'world'            
         }
+    }
+
+    Context "Update" {
+
+    }
+
+    Context "Delete" {
+
     }
 
    Context "Secret with username property" {
