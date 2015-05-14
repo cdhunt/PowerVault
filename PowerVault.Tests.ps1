@@ -5,7 +5,7 @@ Describe "API Compatability" {
     New-Item -Path TestDrive:\ -Name Vault -ItemType Directory
     Expand-Archive -Path TestDrive:\Vault.zip -DestinationPath TestDrive:\Vault
 
-    Start-Process -FilePath TestDrive:\Vault\Vault.exe -ArgumentList @('server','-dev') -RedirectStandardOutput TestDrive:\stdout.txt -WindowStyle Hidden
+    $process = Start-Process -FilePath TestDrive:\Vault\Vault.exe -ArgumentList @('server','-dev') -RedirectStandardOutput TestDrive:\stdout.txt -WindowStyle Hidden -PassThru
 
     Start-Sleep -Milliseconds 500
 
@@ -84,7 +84,7 @@ Describe "API Compatability" {
         }
     }
 
-    Stop-Process -Name Vault
+    $process.Kill()
 }
 
 Remove-Module PowerVault
