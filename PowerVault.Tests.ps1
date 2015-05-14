@@ -1,49 +1,79 @@
-﻿Import-Module "$PSScriptRoot\PowerVault.psd1"
+﻿Import-Module .\PowerVault.psd1
 
-Describe "PowerVault" {
-     Context "Basic Secret" {
-        Mock -ModuleName PowerVault Invoke-RestMethod { return [PSCustomObject]@{data=[PSCustomObject]@{value="world"}} }
+Describe "API Compatability" {
+    Invoke-WebRequest -Uri https://dl.bintray.com/mitchellh/vault/vault_0.1.2_windows_amd64.zip -OutFile TestDrive:\vault.zip
+    New-Item -Path TestDrive:\ -Name Vault -ItemType Directory
+    Expand-Archive -Path TestDrive:\Vault.zip -DestinationPath TestDrive:\Vault
 
-        $result = Get-Secret -VaultObject $vault -Path secret/hello 
+    Start-Process -FilePath TestDrive:\Vault\Vault.exe -ArgumentList @('server','-dev') -RedirectStandardOutput TestDrive:\stdout.txt -WindowStyle Hidden
 
-        It "Should contain a username property that equals 'test'" {
-            $result.value | Should BeExactly 'world'
+    Start-Sleep -Milliseconds 500
+
+    $addr = (Select-String -Path TestDrive:\stdout.txt -SimpleMatch VAULT_ADDR | Select-Object -ExpandProperty Line -First 1).Split('=')[1].Trim("'")
+    $token = (Select-String -Path TestDrive:\stdout.txt -SimpleMatch VAULT_TOKEN | Select-Object -ExpandProperty Line -First 1).Split('=')[1].Trim("'")
+
+    $env:VAULT_ADDR = $addr
+    $env:VAULT_TOKEN = $token
+
+    # Pre-populate with some known secrets
+    TestDrive:\Vault\Vault.exe write secret/hello value=world
+    TestDrive:\Vault\Vault.exe write secret/testwithusername username=usernametest password=p@55w0rd
+    TestDrive:\Vault\Vault.exe write secret/testwithoutusername password=p@55w0rd
+
+    $vault = Get-Vault -Address 127.0.0.1 -token $token
+
+    Context "Basic CRUD" {     
+
+        $result = Get-Secret $vault secret/hello
+
+        It "Should have a 'value' property" {
+            $output = $result | Get-Member -Name value
+
+            $output | Should Not BeNullOrEmpty 
+        }
+
+        It "Should return hello world" {
+
+            $result.value | Should BeExactly 'world'            
         }
     }
- 
-    Context "Secret with username property" {
-        Mock -ModuleName PowerVault Invoke-RestMethod { return [PSCustomObject]@{data=[PSCustomObject]@{UserName="test"; Password="P@ssw0rd"}} }
 
-        $result = Get-Secret -VaultObject $vault -Path secret/test -AsCredential 
+   Context "Secret with username property" {
+
+        $result = Get-Secret $vault -Path secret/testwithusername -AsCredential 
 
         It "Should be a PSCredential" {
             $result.GetType().Name | Should Be 'PSCredential'
         }
 
-        It "Should contain a username property that equals 'test'" {
-            $result.UserName | Should BeExactly 'test'
+        It "Should contain a username property that equals 'usernametest'" {
+            $result.UserName | Should BeExactly 'usernametest'
         }
     }
 
     Context "Secret without username property" {
-        Mock -ModuleName PowerVault Invoke-RestMethod { return [PSCustomObject]@{data=[PSCustomObject]@{password="P@ssw0rd"}} }
+        
+        $result = Get-Secret $vault -Path secret/testwithoutusername -AsCredential 
 
-        $result = Get-Secret -VaultObject $vault -Path secret/test -AsCredential 
+        It "Should be a PSCredential" {
+            $result.GetType().Name | Should Be 'PSCredential'
+        }
 
-        It "Should contain a username property that equals 'test'" {
-            $result.UserName | Should BeExactly 'test'
+        It "Should contain a username property that equals 'testwithoutusername'" {
+            $result.UserName | Should BeExactly 'testwithoutusername'
         }
     }
 
     Context "Secret does not exist" {
-        Mock -ModuleName PowerVault Invoke-RestMethod { throw 'The remote server returned an error: (404) Not Found.' }
 
         It "Should handle an exception" {
 
-            { Get-Secret -VaultObject $vault -Path secret/nohello } | Should Not Throw
+            { Get-Secret $vault -Path secret/nohello } | Should Not Throw
 
         }
     }
+
+    Stop-Process -Name Vault
 }
 
 Remove-Module PowerVault
