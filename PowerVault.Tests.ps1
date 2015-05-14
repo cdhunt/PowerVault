@@ -22,6 +22,17 @@ Describe "API Compatability" {
 
     $vault = Get-Vault -Address 127.0.0.1 -token $token
 
+    Context "Verify Server Started" {
+        $result = Test-Vault $vault
+
+        It "Should be Initialized" {
+            $result.initialized | Should Be $true
+        }
+        It "Should not be Sealed" {
+            $result.sealed | Should Be $false
+        }
+    }
+
     Context "Basic CRUD" {     
 
         $result = Get-Secret $vault secret/hello
