@@ -1,6 +1,16 @@
 ﻿Import-Module "$PSScriptRoot\PowerVault.psd1"
 
-Describe "Getting a credential" {
+Describe "PowerVault" {
+     Context "Basic Secret" {
+        Mock -ModuleName PowerVault Invoke-RestMethod { return [PSCustomObject]@{data=[PSCustomObject]@{value="world"}} }
+
+        $result = Get-Secret -VaultObject $vault -Path secret/hello 
+
+        It "Should contain a username property that equals 'test'" {
+            $result.value | Should BeExactly 'world'
+        }
+    }
+ 
     Context "Secret with username property" {
         Mock -ModuleName PowerVault Invoke-RestMethod { return [PSCustomObject]@{data=[PSCustomObject]@{UserName="test"; Password="P@ssw0rd"}} }
 
@@ -28,9 +38,9 @@ Describe "Getting a credential" {
     Context "Secret does not exist" {
         Mock -ModuleName PowerVault Invoke-RestMethod { throw 'The remote server returned an error: (404) Not Found.' }
 
-        It "Should not throw an exception" {
+        It "Should handle an exception" {
 
-            $result = Get-Secret -VaultObject $vault -Path secret/nohello
+            { Get-Secret -VaultObject $vault -Path secret/nohello } | Should Not Throw
 
         }
     }
