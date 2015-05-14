@@ -18,6 +18,7 @@ Describe "API Compatability" {
     # Pre-populate with some known secrets
     TestDrive:\Vault\Vault.exe write secret/hello value=world
     TestDrive:\Vault\Vault.exe write secret/delete value=me
+    TestDrive:\Vault\Vault.exe write secret/update value=was
     TestDrive:\Vault\Vault.exe write secret/testwithusername username=usernametest password=p@55w0rd
     TestDrive:\Vault\Vault.exe write secret/testwithoutusername password=p@55w0rd
 
@@ -53,7 +54,15 @@ Describe "API Compatability" {
     }
 
     Context "Create" {
+        Set-Secret $vault secret/new @{value='secret'}
 
+        $json = TestDrive:\Vault\Vault.exe --% read -format=json secret/new
+        $result = $json | ConvertFrom-Json
+
+        It "Should contain a new secret" {
+            $result | Should Not BeNullOrEmpty
+            $result.data.value | Should BeExactly 'secret'
+        }
     }
 
     Context "Read" {     
@@ -73,10 +82,26 @@ Describe "API Compatability" {
     }
 
     Context "Update" {
+        Set-Secret $vault secret/update @{value='now'}
+
+        $json = TestDrive:\Vault\Vault.exe --% read -format=json secret/update
+        $result = $json | ConvertFrom-Json
+
+        It "Should contain a new secret" {
+            $result | Should Not BeNullOrEmpty
+            $result.data.value | Should BeExactly 'now'
+        }
 
     }
 
     Context "Delete" {
+        Remove-Secret $vault secret/delete
+
+        $json = & TestDrive:\Vault\Vault.exe 'read', '-format=json', 'secret/delete' 2> TestDrive:\stderr.txt
+        
+        It 'Should be not contain the secret' {            
+            $json | Should BeNullOrEmpty
+        }
 
     }
 
