@@ -268,5 +268,3 @@ function Remove-Secret
     Invoke-RestMethod -Uri $uri -Method Delete -Headers $VaultObject.auth_header| Write-Output
 
 }
-
-Export-ModuleMember -Function *-Vault, *-Secret
