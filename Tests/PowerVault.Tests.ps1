@@ -1,10 +1,4 @@
-﻿$Verbose = @{}
-if($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notlike "master")
-{
-    $Verbose.add("Verbose",$True)
-}
-
-Import-Module $PSScriptRoot\..\PowerVault\PowerVault.psd1 -Force
+﻿Import-Module $PSScriptRoot\..\PowerVault\PowerVault.psd1 -Force
 
 Describe 'API Compatability' {
     Invoke-WebRequest -Uri https://dl.bintray.com/mitchellh/vault/vault_0.1.2_windows_amd64.zip -OutFile $PSScriptRoot\vault.zip
