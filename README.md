@@ -32,3 +32,6 @@ UserName                       Password
 --------                       --------
 username   System.Security.SecureString
 ```
+
+## Testing
+The tests depend on Vault.exe to launch a local Dev server. The script will pull down the binaries from HashiCorp to TestDrive:\ and start up a Vault.exe process. All of the files should be cleaned up when the tests complete. 
