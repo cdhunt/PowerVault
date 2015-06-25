@@ -4,17 +4,23 @@ Describe 'API Compatability' {
     Invoke-WebRequest -Uri https://dl.bintray.com/mitchellh/vault/vault_0.1.2_windows_amd64.zip -OutFile $PSScriptRoot\vault.zip
     New-Item -Path TestDrive:\ -Name Vault -ItemType Directory
     
-    $shell = new-object -com shell.application
-    $zip = $shell.NameSpace("$PSScriptRoot\vault.zip")
-    foreach($item in $zip.items())
+    if ($PSVersionTable.PSVersion.Major -ge 5)
     {
-        $shell.Namespace(“$PSScriptRoot\vault.zip”).copyhere($item)
+        Expand-Archive -Path $PSScriptRoot\Vault.zip -DestinationPath TestDrive:\Vault
+    }
+    else
+    {
+        $shell = new-object -com shell.application
+        $zip = $shell.NameSpace("$PSScriptRoot\vault.zip")
+        foreach($item in $zip.items())
+        {
+            $shell.Namespace(“$PSScriptRoot\vault.zip”).copyhere($item)
+        }
+
+        Copy-Item -Path $PSScriptRoot\vault.exe -Destination TestDrive:\Vault\
     }
 
     Remove-Item -Path $PSScriptRoot\vault.zip
-    Copy-Item -Path $PSScriptRoot\vault.exe -Destination TestDrive:\Vault\
-
-    #Expand-Archive -Path $PSScriptRoot\Vault.zip -DestinationPath TestDrive:\Vault
 
     $process = Start-Process -FilePath TestDrive:\Vault\Vault.exe -ArgumentList @('server','-dev') -RedirectStandardOutput TestDrive:\stdout.txt -WindowStyle Hidden -PassThru
 
