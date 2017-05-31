@@ -1,31 +1,14 @@
 ﻿Import-Module $PSScriptRoot\..\PowerVault\PowerVault.psd1 -Force
 
+if (-not (Test-Path -Path "$PSScriptRoot\Vault.exe") ) {
+    throw "You need a copy of Vault.exe in $PSScriptRoot"
+}
+
 Describe 'API Compatability' {
-    <#
-    Invoke-WebRequest -Uri "http://releases.hashicorp.com/vault/0.7.2/vault_0.7.2_windows_amd64.zip?_ga=2.92103002.1726850924.1496071924-932259573.1496071923" -OutFile $PSScriptRoot\vault.zip -UseBasicParsing
-    New-Item -Path TestDrive:\ -Name Vault -ItemType Directory
 
-    if ($PSVersionTable.PSVersion.Major -ge 5)
-    {
-        Expand-Archive -Path $PSScriptRoot\Vault.zip -DestinationPath $PSScriptRoot
-    }
-    else
-    {
-        $shell = new-object -com shell.application
-        $zip = $shell.NameSpace("$PSScriptRoot\vault.zip")
-        foreach($item in $zip.items())
-        {
-            $shell.Namespace(“$PSScriptRoot\vault.zip”).copyhere($item)
-        }
-
-        Copy-Item -Path & "$PSScriptRoot\Vault.exe" -Destination $PSScriptRoot\
-    }
-
-    Remove-Item -Path $PSScriptRoot\vault.zip
-    #>
     $process = Start-Process -FilePath "$PSScriptRoot\Vault.exe" -ArgumentList @('server','-dev') -RedirectStandardOutput TestDrive:\stdout.txt -WindowStyle Hidden -PassThru
 
-    Start-Sleep -Milliseconds 500
+    Start-Sleep -Seconds 2
 
     try
         {
@@ -154,16 +137,20 @@ Describe 'API Compatability' {
 
         Context 'Secret does not exist' {
 
-            It 'Should handle an exception' {
+            It 'Should throw an exception for missing Path' {
 
-                { Get-Secret $vault -Path secret/nohello } | Should Not Throw
+                { Get-Secret $vault -Path secret/nohello } | Should Throw
 
             }
         }
     }
     catch {
+        Write-Host "Error occurred:`n`n`n$($_ | Out-String)`n`n`n"
 
+    }
+    finally {
         $process.Kill()
+        Start-Sleep -Seconds 2
     }
 
 }
