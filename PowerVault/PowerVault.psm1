@@ -79,7 +79,7 @@ function Test-Vault
    -----
    world
 .EXAMPLE
-   PS C:\> Get-Secret -VaultObject $vault -Path secret/username -AsCredential 
+   PS C:\> Get-Secret -VaultObject $vault -Path secret/username -AsCredential
 
    UserName                       Password
    --------                       --------
@@ -92,6 +92,7 @@ function Test-Vault
 #>
 function Get-Secret
 {
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
     [CmdletBinding()]
     [Alias()]
     [OutputType([Object])]
@@ -119,19 +120,19 @@ function Get-Secret
 
     Write-Debug $uri
 
-    try 
+    try
     {
         $result = Invoke-RestMethod -Uri $uri -Headers $VaultObject.auth_header
     }
     catch
     {
-        # Do nothing
+        Throw ("Failed to get secret from " + $uri)
     }
 
     if ($result)
     {
         if ($result.GetType().Name -eq 'PSCustomObject')
-        {        
+        {
             if ($result | Get-Member -Name data)
             {
                 $data = $result | Select-Object -ExpandProperty data
@@ -141,7 +142,7 @@ function Get-Secret
                     $username = [string]::Empty
 
                     if ($data | Get-Member -Name username)
-                    {                    
+                    {
                         $username = $data.username
                         Write-Verbose "Found a username property in the results. [$username]"
                     }
@@ -191,8 +192,8 @@ function Get-Secret
 
    PS C:\> Get-Secret $vault secret/new
 
-   value 
-   ----- 
+   value
+   -----
    secret
 #>
 function Set-Secret
