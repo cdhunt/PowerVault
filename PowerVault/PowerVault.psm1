@@ -114,7 +114,7 @@ function Get-Secret
         $AsCredential
     )
 
-    $uri = $VaultObject.uri + $Path
+    $uri = $VaultObject.uri + $Path + '/?list=true'
 
     $result = [string]::Empty
 
